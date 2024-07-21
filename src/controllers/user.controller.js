@@ -3,7 +3,6 @@ import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 const registerUser = async (req,res) => {
     const { username, email, fullname, password } = req.body;
-    console.log(username,email,fullname,password);
 
     // Validation
     if([username,email,fullname,password].some(data=>(!data || data.trim()===""))){
@@ -23,8 +22,8 @@ const registerUser = async (req,res) => {
     }
 
     // get the local path of avatar and coverImage
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+    const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
     // check for avatar
     if(!avatarLocalPath){
@@ -35,11 +34,11 @@ const registerUser = async (req,res) => {
     }
 
     // Uploading on cloudinary
-    const avatarCloudinartPath=uploadOnCloudinary(avatarLocalPath);
-    const coverImageCloudinartPath=uploadOnCloudinary(coverImageLocalPath);
+    const avatarCloudinaryPath=await uploadOnCloudinary(avatarLocalPath);
+    const coverImageCloudinaryPath=await uploadOnCloudinary(coverImageLocalPath);
 
     // check if uploaded successfully
-    if(!avatarCloudinartPath){
+    if(!avatarCloudinaryPath){
         res.status(409).json({
             message:"Avatar is required"
         });
@@ -52,8 +51,8 @@ const registerUser = async (req,res) => {
         email,
         password,
         username:username.toLowerCase(),
-        avatar:avatarCloudinartPath?.url,
-        coverImage:coverImageCloudinartPath?.url || ""
+        avatar:avatarCloudinaryPath?.url,
+        coverImage:coverImageCloudinaryPath?.url || ""
     });
 
     // check if user created
