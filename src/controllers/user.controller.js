@@ -73,4 +73,81 @@ const registerUser = async (req,res) => {
     console.log("User created successfully")
 }
 
-export {registerUser};
+const loginUser = async (req,res) => {
+
+    const {email,password}=req.body;
+
+    if(!email || !password){
+        res.status(400).json({
+            "message":"Email and Password are required fields",
+            "status":"Login Failed"
+        });
+        return;
+    }
+
+    const user = await User.exists({email:email});
+    if(!user){
+        res.status(400).json({
+            "message":"User does not exist, Try to register",
+        });
+        return;
+    }
+
+    const isPasswordCorrect = await user.isPasswordCorrect(password);
+    if(!isPasswordCorrect){
+        res.status(400).json({
+            "message":"Password is incorrect"
+        });
+        return;
+    }
+
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+
+    user.refreshToken=refreshToken;
+    await user.save({validateBeforeSave:false});
+
+    // sending cookie
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json({
+        "message":"Login successful",
+        "data":user
+    });
+}
+
+const logoutUser= async (req,res) => {
+    await User.findByIdAndUpdate(req.user._id,{
+        $set:{
+            refreshToken:undefined
+        }
+    },{
+        new:true
+    });
+
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json({
+        "message":"User logged out successfully"
+    })
+}
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+};
