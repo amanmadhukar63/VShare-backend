@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../models/user.model';
+import { User } from '../models/user.model.js';
 
 export const verifyJWT = async (req,res,next) => {
     // it will use to make secured routes
     try {
-        const token = req?.cookie?.accessToken;
+        const token = req?.cookies?.accessToken;
     
         if(!token){
             res.status(400).json({
