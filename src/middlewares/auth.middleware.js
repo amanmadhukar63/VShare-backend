@@ -18,7 +18,10 @@ export const verifyJWT = async (req,res,next) => {
         const user = await User.findById(tokenInfo._id);
     
         if(!user){
-    
+            res.status(408).json({
+                "message":"Unauthorized access"
+            });
+            return;
         }
         req.user=user;
         next();
