@@ -146,8 +146,146 @@ const logoutUser= async (req,res) => {
     })
 }
 
+const changeCurrentPassword = async (req,res) =>{
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req?.user?._id);
+
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    if(!isPasswordCorrect){
+        return res
+        .status(400)
+        .json({
+            "message":"Incorrect Old Password"
+        })
+    }
+
+    user.password=newPassword;
+    await user.save({validateBeforeSave:false});
+
+    return res
+    .status(200)
+    .json({
+        "message":"Password changed successfully"
+    });
+}
+
+const getCurrentUser = async (req,res) =>{
+    return res
+    .status(200)
+    .json({
+        "data":req.user,
+        "message":"User Authenticated"
+    })
+}
+
+const updateUserDetails = async (req,res) => {
+    const {fullname, email} = req.body;
+    
+    if(!fullname && !email){
+        return res
+        .status(400)
+        .json({
+            "message":"Some Field are required to perform update operation",
+            "status":400
+        });
+    }
+
+    let updateObj={};
+    if(fullname) updateObj={fullname};
+    if(email) updateObj={...updateObj,email};
+
+    const user = await User.findByIdAndUpdate(req?.user?._id,{
+        $set: updateObj
+    },{
+        new:true
+    }).select("-password");
+
+    return res
+    .status(200)
+    .json({
+        "message":"Data updated successfully",
+        "data":user
+    });
+}
+
+const updateAvatar = async (req,res) => {
+    const avatarLocalPath = req.file.avatar;
+
+    if(!avatarLocalPath){
+        return res
+        .status(400)
+        .json({
+            "message":"Avatar is needed to change the avatar"
+        });
+    }
+
+    const avatarCloudinaryPath = await uploadOnCloudinary(avatarLocalPath);
+
+    if(!avatarCloudinaryPath?.url){
+        return res
+        .status(500)
+        .json({
+            "message":"Failed to upload"
+        });
+    }
+
+    const user = await User.findByIdAndUpdate(req?.user?._id,{
+        $set: {
+            avatar:avatarCloudinaryPath?.url
+        }
+    },{new:true}).select("-password");
+
+    return res
+    .status(200)
+    .json({
+        "message":"Update successfull",
+        "data":user
+    });
+}
+
+const updateCoverImage = async (req,res) => {
+    const coverImageLocalPath = req.file.coverImage;
+
+    if(!coverImageLocalPath){
+        return res
+        .status(400)
+        .json({
+            "message":"Avatar is needed to change the avatar"
+        });
+    }
+
+    const coverImageCloudinaryPath = await uploadOnCloudinary(coverImageLocalPath);
+
+    if(!coverImageCloudinaryPath?.url){
+        return res
+        .status(500)
+        .json({
+            "message":"Failed to upload"
+        });
+    }
+
+    const user = await User.findByIdAndUpdate(req?.user?._id,{
+        $set: {
+            coverImage:coverImageCloudinaryPath?.url
+        }
+    },{new:true}).select("-password");
+
+    return res
+    .status(200)
+    .json({
+        "message":"Update successfull",
+        "data":user
+    });
+}
+
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateUserDetails,
+    updateAvatar,
+    updateCoverImage
 };
